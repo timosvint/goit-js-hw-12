@@ -23,7 +23,9 @@ async function onSearch(event) {
     currentPage = 1;
     clearGallery()
     showLoader()
-    getImagesByQuery(userInfo).then(data => {
+
+    try {
+        const data = await getImagesByQuery(userInfo);
         
         if (data.hits.length === 0) {
   
@@ -36,55 +38,60 @@ async function onSearch(event) {
         hideLoadMoreButton()
         createGallery(data.hits)
         showLoadMoreButton()
-        form.reset()         
-    }).catch(error =>
+        form.reset()
+    }
+    catch (error) {
         iziToast.error({
             message: `${error}`,
             position: "topLeft",
         })
+    }
     
-    ).finally(() => {
-       
+    finally {  
         hideLoader()
     }
-          )
+    
 
 
     
 
 } 
 
-function loadMoreImage(event) { 
+async function loadImage(event) {
     event.preventDefault()
 
     const card = document.querySelector(`.gallery-item`)
     currentPage += 1
     const clientRect = card.getBoundingClientRect()
     const rectHeight = clientRect.height;
-    
-    getImagesByQuery(currentQuery, currentPage, limit).then(data => {
-        const totalHits = Math.ceil(data.totalHits / limit); 
-        if (currentPage > totalHits) {
-             hideLoadMoreButton()
-             return iziToast.error({
-                 message: `We're sorry, but you've reached the end of search results.`,
-                 position:"topLeft"
-             })
-         }
-         
-         createGallery(data.hits)  
-         window.scrollBy({
-            top: rectHeight * 2,
-            behavior: `smooth`,
-        })
-        }).catch(error =>
-            iziToast.error({
-                message: `${error}`,
-                position: "topLeft",
-            })
-    
-      )
 
- }
+    try {
+        const data = await getImagesByQuery(currentQuery, currentPage, limit)
+             
+            const totalHits = Math.ceil(data.totalHits / limit);
+            if (currentPage > totalHits) {
+                hideLoadMoreButton()
+                return iziToast.error({
+                    message: `We're sorry, but you've reached the end of search results.`,
+                    position: "topLeft"
+                })
+            }
+         
+            createGallery(data.hits)
+            window.scrollBy({
+                top: rectHeight * 2,
+                behavior: `smooth`,
+            })
+        
+        
+    }
+
+    catch (error) {
+        iziToast.error({
+            message: `${error}`,
+            position: "topLeft",
+        })
+    }
+}
 form.addEventListener(`submit`, onSearch)
-loadMore.addEventListener(`click`, loadMoreImage)
+loadMore.addEventListener(`click`, loadImage)
